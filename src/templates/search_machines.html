@@ -1,0 +1,236 @@
+<head>
+    <title>Recommender lvl1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- script src="http://code.jquery.com/jquery-1.8.3.min.js"></script -->
+</head>
+{% extends "layout.html" %}
+{% block content %}
+<div class="content-section">
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        <fieldset class="form-group">
+            <legend class="border-bottom mb-4">Top 5 Machine Recommendations</legend>
+            <div class="form-group">
+                {{ form.material_id.label(class="form-control-label") }}
+                {% if form.material_id.errors %}
+                {{ form.material_id(class="form-control form-control-lg is-invalid")}}
+                <div class="invalid-feedback">
+                    {% for error in form.material_id.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% else %}
+                {{ form.material_id(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {% for subfield in form.tech %}
+                <tr>
+                    <td>{{ subfield }}</td>
+                    <td>{{ subfield.label }}</td>
+                </tr>
+                {% endfor %}
+            </div>
+        </fieldset>
+        <div class="form-group">
+            {{ form.submit(class="btn btn-outline-info") }}
+        </div>
+    </form>
+</div>
+{% if row_data[0] %}
+<div class="content-section mt-5">
+    <h3>Already Used Machines</h3>
+    <table class="table table-responsive">
+        <thead>
+            <tr>
+                {% for col in column_names2 %}
+                <th>{{col}}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        {% for row in row_data2 %}
+        <tr>
+            {% for col, row_ in zip(column_names2, row) %}
+            <td>{{row_}}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+    <h3>Recommended Machines</h3>
+    <table class="table table-responsive">
+        <thead>
+            <tr>
+                {% for col in column_names %}
+                <th>{{col}}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        {% for row in row_data %}
+        <tr>
+            {% for col, row_ in zip(column_names, row) %}
+            {% if col == link_column %}
+            <td>
+                <form id="feedback_buttons" class="feedback_buttons mt-1" method="POST">
+                    {{ form.hidden_tag() }}
+                    {{ form_ev.btn_yes (class="matching btn btn-outline-info") }}
+                    {{ form_ev.btn_no (class="not_matching btn btn-outline-info mt-2") }}
+                </form>
+            </td>
+            {% else %}
+            <td>{{row_}}</td>
+            {% endif %}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endif %}
+<script>
+    $(document).ready(function () {
+
+        var $form = $('.feedback_buttons');
+
+        $form.delegate('.matching', 'click', function (e) {
+
+            var $mybtn = $(this);
+
+            var $data = {
+                material: $("#material_id").val(),
+                machine: $mybtn.closest('tr').find("td:eq(0)").text(),
+                feedback: true
+            };
+
+            $.ajax({
+                type: 'POST',
+                url: "{{ url_for('match_feedback_to_db') }}",
+                data: $data,
+                success: function (data) {
+                    console.log(data),
+                        $mybtn.removeClass('btn btn-outline-info'),
+                        $mybtn.addClass('btn btn-primary'),
+                        $mybtn.next().removeClass('btn btn-primary'),
+                        $mybtn.next().addClass('btn btn-outline-info')
+                }
+            });
+            e.preventDefault(); // block the traditional submission of the form.
+        });
+
+        $form.delegate('.not_matching', 'click', function (e) {
+
+            var $mybtn = $(this);
+
+            var $data = {
+                material: $("#material_id").val(),
+                machine: $mybtn.closest('tr').find("td:eq(0)").text(),
+                feedback: false
+            };
+
+            $.ajax({
+                type: 'POST',
+                url: "{{ url_for('match_feedback_to_db') }}",
+                data: $data,
+                success: function (data) {
+                    console.log(data),
+                        $mybtn.removeClass('btn btn-outline-info'),
+                        $mybtn.addClass('btn btn-primary'),
+                        $mybtn.prev().removeClass('btn btn-primary'),
+                        $mybtn.prev().addClass('btn btn-outline-info')
+                }
+            });
+            e.preventDefault(); // block the traditional submission of the form.
+        });
+
+    });
+</script>
+{% endblock content %}
+
+{% block sidetable %}
+{% if row_data[0] %}
+<div class="content-section">
+    <h3>Ähnliche Materialien</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                {% for col in column_names3 %}
+                <th>{{col}}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        {% for row in row_data3 %}
+        <tr>
+            {% for col, row_ in zip(column_names3, row) %}
+            {% if col == link_column %}
+            <td>
+                <form id="feedback_buttons" class="feedback_buttons mt-1" method="POST">
+                    {{ form.hidden_tag() }}
+                    {{ form_ev.btn_yes (class="matching_mat btn btn-outline-info") }}
+                    {{ form_ev.btn_no (class="not_matching_mat btn btn-outline-info") }}
+                </form>
+            </td>
+            {% else %}
+            <td>{{row_}}</td>
+            {% endif %}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endif %}
+<script>
+    $(document).ready(function () {
+
+        var $form = $('.feedback_buttons');
+
+        $form.delegate('.matching_mat', 'click', function (e) {
+
+            var $mybtn = $(this);
+
+            var $data = {
+                first_material: $("#material_id").val(),
+                second_material: $mybtn.closest('tr').find("td:eq(0)").text(),
+                feedback: true
+            };
+
+            $.ajax({
+                type: 'POST',
+                url: "{{ url_for('sim_mat_feedback_to_db') }}",
+                data: $data,
+                success: function (data) {
+                    console.log(data),
+                        $mybtn.removeClass('btn btn-outline-info'),
+                        $mybtn.addClass('btn btn-primary'),
+                        $mybtn.next().removeClass('btn btn-primary'),
+                        $mybtn.next().addClass('btn btn-outline-info')
+                }
+            });
+            e.preventDefault(); // block the traditional submission of the form.
+        });
+
+        $form.delegate('.not_matching_mat', 'click', function (e) {
+
+            var $mybtn = $(this);
+
+            var $data = {
+                first_material: $("#material_id").val(),
+                second_material: $mybtn.closest('tr').find("td:eq(0)").text(),
+                feedback: false
+            };
+
+            $.ajax({
+                type: 'POST',
+                url: "{{ url_for('sim_mat_feedback_to_db') }}",
+                data: $data,
+                success: function (data) {
+                    console.log(data),
+                        $mybtn.removeClass('btn btn-outline-info'),
+                        $mybtn.addClass('btn btn-primary'),
+                        $mybtn.prev().removeClass('btn btn-primary'),
+                        $mybtn.prev().addClass('btn btn-outline-info')
+                }
+            });
+            e.preventDefault(); // block the traditional submission of the form.
+        });
+
+    });
+</script>
+{% endblock sidetable %}

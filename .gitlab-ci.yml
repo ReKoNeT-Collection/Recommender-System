@@ -1,0 +1,10 @@
+image: docker:19.03.12
+
+build_image:
+  script:
+    - docker stop recommenderC || true
+    - docker rm recommenderC || true
+    - docker build --pull -t recommender ./DockerImage/
+    - docker run -d --name recommenderC -p 5000:5000 recommender
+  only:
+    - master

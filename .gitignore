@@ -1,0 +1,9 @@
+#/**.csv
+/**.py
+/.aws/*
+/DockerImage/.aws/*
+#*.csv
+
+*.db
+
+.vscode/
